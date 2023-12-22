@@ -10,19 +10,14 @@
 #include <netinet/in.h>
 #include <ctype.h>
 #include <sys/wait.h>
-#include <pthread.h>
 
 #define errquit(m)	{ perror(m); exit(-1); }
-#define BUFFERSIZE 1024
-#define THREADS 20
+#define BUFFERSIZE 100000
+#define PROCESS 7000
 
 static int port_http = 10802;
 static int port_https = 10841;
 static const char *docroot = "/html";
-
-typedef struct {
-    int clientSocket;
-} ThreadArgs;
 
 void discard(char *str) {
     char *questionMarkPos = strstr(str, "/?");
@@ -161,7 +156,7 @@ void handleRequest(int clientSocket) {
 	
 	while((bytesRead = read(fileID, buffer, sizeof(buffer))) > 0)
 		write(clientSocket, buffer, bytesRead);
-	
+
 	close(fileID);
 
 }
@@ -170,17 +165,6 @@ void handleClient(int clientSocket) {
 	handleRequest(clientSocket);
 
 	close(clientSocket);
-}
-
-void *startThread(void *arg) {
-    ThreadArgs *threadArgs = (ThreadArgs *)arg;
-    int clientSocket = threadArgs->clientSocket;
-    free(arg);
-
-    handleRequest(clientSocket);
-    
-    close(clientSocket);
-    pthread_exit(NULL);
 }
 
 int main(int argc, char *argv[]) {
@@ -206,32 +190,36 @@ int main(int argc, char *argv[]) {
 	if(bind(s, (struct sockaddr*) &sin, sizeof(sin)) < 0) errquit("bind");
 	if(listen(s, SOMAXCONN) < 0) errquit("listen");
 
-	pthread_t threads[THREADS];
-    int threadIndex = 0;
-			
-	do {
-		int c;
-		struct sockaddr_in csin;
-		socklen_t csinlen = sizeof(csin);
+	for (int i = 0; i < PROCESS; i++) {
+	
+		pid_t pid = fork();
 
-		if((c = accept(s, (struct sockaddr*) &csin, &csinlen)) < 0) {
-			errquit("accept");
-			break;
+		if(pid == -1) {
+			errquit("Error process");
 		}
+		else if(pid == 0) {
+			
+			do {
+				int c;
+				struct sockaddr_in csin;
+				socklen_t csinlen = sizeof(csin);
 
-		handleClient(c);
+				if((c = accept(s, (struct sockaddr*) &csin, &csinlen)) < 0) {
+					errquit("accept");
+					break;
+				}
 
-		ThreadArgs *threadArgs = malloc(sizeof(ThreadArgs));
-        threadArgs->clientSocket = c;
+				handleClient(c);
 
-        pthread_create(&threads[threadIndex], NULL, startThread, (void *)threadArgs);
+			} while(1);
 
-        for (int i = 0; i < THREADS; i++)
-            pthread_join(threads[i], NULL);
+			exit(EXIT_SUCCESS);
+		}
+	}
 
-        threadIndex = (threadIndex + 1) % THREADS;
-
-	} while(1);
+	for (int i = 0; i < PROCESS; i++) {
+        wait(NULL);
+    }
 
 	return 0;
 }
