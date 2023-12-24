@@ -21,33 +21,6 @@ int compareDoubles(const void *a, const void *b) {
     }
 }
 
-void swap(double* a, double* b) {
-    
-    double *t = a;
-    *a = *b;
-    *b = *t;
-}
-
-void sort(double arr[], int n)
-{
-    int i, j;
-    int swapped;
-    for (i = 0; i < n - 1; i++) {
-        swapped = 0;
-        for (j = 0; j < n - i - 1; j++) {
-            if (arr[j] > arr[j + 1]) {
-                swap(&arr[j], &arr[j + 1]);
-                swapped = 1;
-            }
-        }
- 
-        // If no two elements were swapped
-        // by inner loop, then break
-        if (swapped == 0)
-            break;
-    }
-}
-
 int main() {
     int clientSocket;
     struct sockaddr_in serverAddr;
