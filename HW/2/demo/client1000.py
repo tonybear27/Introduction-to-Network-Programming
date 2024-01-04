@@ -39,7 +39,7 @@ def run_test():
         print(i)
         conns.append(build_new_connection())
         conns[i].sendline("register " + str(i) + " " + str(i))
-        #print(conns[i].recvline())
+        print(conns[i].recvline())
         conns[i].sendline("login " + str(i) + " " + str(i))
         result.append(conns[i].recvline())
 
