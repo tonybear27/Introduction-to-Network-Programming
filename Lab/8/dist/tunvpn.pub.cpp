@@ -42,27 +42,27 @@ map<unsigned int, int> routingTable;
 
 void debug(const struct ip *ip_header) {
 
-    char src_ip[INET_ADDRSTRLEN]; 
-    char dst_ip[INET_ADDRSTRLEN]; 
-
-    inet_ntop(AF_INET, &(ip_header->ip_src), src_ip, INET_ADDRSTRLEN);
-    inet_ntop(AF_INET, &(ip_header->ip_dst), dst_ip, INET_ADDRSTRLEN);
-
-    printf("Source IP: %s\n", src_ip);
-    printf("Destination IP: %s\n\n", dst_ip);
+	char src_ip[INET_ADDRSTRLEN]; 
+	char dst_ip[INET_ADDRSTRLEN]; 
+	
+	inet_ntop(AF_INET, &(ip_header->ip_src), src_ip, INET_ADDRSTRLEN);
+	inet_ntop(AF_INET, &(ip_header->ip_dst), dst_ip, INET_ADDRSTRLEN);
+	
+	printf("Source IP: %s\n", src_ip);
+	printf("Destination IP: %s\n\n", dst_ip);
 }
 
 void setNonBlocking(int fd) {
-    int flags = fcntl(fd, F_GETFL, 0);
-    if (flags == -1) {
-        perror("fcntl F_GETFL");
-        exit(EXIT_FAILURE);
-    }
-    flags |= O_NONBLOCK;
-    if (fcntl(fd, F_SETFL, flags) == -1) {
-        perror("fcntl F_SETFL O_NONBLOCK");
-        exit(EXIT_FAILURE);
-    }
+    	int flags = fcntl(fd, F_GETFL, 0);
+	if (flags == -1) {
+		perror("fcntl F_GETFL");
+		exit(EXIT_FAILURE);
+	}
+	flags |= O_NONBLOCK;
+	if (fcntl(fd, F_SETFL, flags) == -1) {
+		perror("fcntl F_SETFL O_NONBLOCK");
+		exit(EXIT_FAILURE);
+	}
 }
 
 int tun_alloc(char *dev) {
@@ -110,15 +110,15 @@ int ifreq_get_flag(int fd, const char *dev, short *flag) {
 int ifreq_set_flag(int fd, const char *dev, short flag) {
 
 	short current_flags;
-    ifreq_get_flag(fd, dev, &current_flags);
-    current_flags |= flag;
+    	ifreq_get_flag(fd, dev, &current_flags);
+    	current_flags |= flag;
 
-    struct ifreq ifr;
-    memset(&ifr, 0, sizeof(ifr));
+    	struct ifreq ifr;
+    	memset(&ifr, 0, sizeof(ifr));
 
-    if (dev) strncpy(ifr.ifr_name, dev, IFNAMSIZ);
-    ifr.ifr_flags = current_flags;
-    return ioctl(fd, SIOCSIFFLAGS, &ifr);
+    	if (dev) strncpy(ifr.ifr_name, dev, IFNAMSIZ);
+    	ifr.ifr_flags = current_flags;
+    	return ioctl(fd, SIOCSIFFLAGS, &ifr);
 }
 
 int ifreq_set_sockaddr(int fd, const char *dev, int cmd, unsigned int addr) {
@@ -147,9 +147,9 @@ int ifreq_set_broadcast(int fd, const char *dev, unsigned int addr) {
 
 void *handleClient(void *args) {
 	
-	int *fds = (int *)args;
-    int tunFd = fds[0];
-    int clientSocket = fds[1];
+    	int *fds = (int *)args;
+    	int tunFd = fds[0];
+    	int clientSocket = fds[1];
 
 	setNonBlocking(clientSocket);
    	setNonBlocking(tunFd);
@@ -179,22 +179,22 @@ void *handleClient(void *args) {
 
 int tunvpn_server(int port) {
 
-	// XXX: implement your server codes here ...
+    	// XXX: implement your server codes here ...
 
-	int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-	if(serverSocket < 0) errquit("Server Socket Error..");
+    	int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    	if(serverSocket < 0) errquit("Server Socket Error..");
 
-	fprintf(stderr, "## [server] starts ...\n");
+    	fprintf(stderr, "## [server] starts ...\n");
 
-	struct sockaddr_in serverAddr;
-    memset(&serverAddr, 0, sizeof(serverAddr));
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = htonl(INADDR_ANY); // Bind to any interface
-    serverAddr.sin_port = htons(port);
+    	struct sockaddr_in serverAddr;
+    	memset(&serverAddr, 0, sizeof(serverAddr));
+    	serverAddr.sin_family = AF_INET;
+    	serverAddr.sin_addr.s_addr = htonl(INADDR_ANY); // Bind to any interface
+    	serverAddr.sin_port = htons(port);
 
-    if (bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0) { errquit("Bind Error.."); }
+    	if (bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0) { errquit("Bind Error.."); }
 
-    if (listen(serverSocket, SOMAXCONN) < 0) { errquit("Listen Error.."); }
+    	if (listen(serverSocket, SOMAXCONN) < 0) { errquit("Listen Error.."); }
 
 	char tunName[] = "tun0";
 	int tunFd = tun_alloc(tunName);
@@ -209,7 +209,7 @@ int tunvpn_server(int port) {
 
 	routingTable[htonl(MYADDR)] = serverSocket;
 
-    while(1) { 
+	while(1) { 
 
 		struct sockaddr_in clientAddr;
 		socklen_t clientAddrLen = sizeof(clientAddr);
@@ -224,24 +224,24 @@ int tunvpn_server(int port) {
 
 		struct thread_args *args = (struct thread_args *)malloc(sizeof(struct thread_args));
 		if (!args) {
-            perror("Failed to allocate memory for thread arguments");
-            close(clientSocket);
-            continue;
-        }
+            		perror("Failed to allocate memory for thread arguments");
+            		close(clientSocket);
+            		continue;
+        	}
 
 		args->tunFd = tunFd;
-        args->clientSocket = clientSocket;
+        	args->clientSocket = clientSocket;
 
 		routingTable[clientIP] = clientSocket;
 
 		pthread_t threadId;
-        if (pthread_create(&threadId, NULL, handleClient, args) != 0) {
-            perror("Failed to create thread");
-            close(clientSocket);
-            free(args);
-        }
+        	if (pthread_create(&threadId, NULL, handleClient, args) != 0) {
+            		perror("Failed to create thread");
+            		close(clientSocket);
+            		free(args);
+        	}
 
-    }
+    	}
 	
 	return 0;
 }
@@ -252,36 +252,36 @@ int tunvpn_client(const char *server, int port) {
 	fprintf(stderr, "## [client] starts ...\n");
 
 	int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
-    if(clientSocket < 0) errquit("Client Socket Error.. ");
+    	if(clientSocket < 0) errquit("Client Socket Error.. ");
 
 	char serverIP[] = "172.28.28.";
-    struct sockaddr_in serverAddr;
-    memset(&serverAddr, 0, sizeof(serverAddr));
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(port);
-    inet_pton(AF_INET, "172.28.28.1", &serverAddr.sin_addr); 
+    	struct sockaddr_in serverAddr;
+    	memset(&serverAddr, 0, sizeof(serverAddr));
+    	serverAddr.sin_family = AF_INET;
+    	serverAddr.sin_port = htons(port);
+    	inet_pton(AF_INET, "172.28.28.1", &serverAddr.sin_addr); 
 
 	int idx = 2;
-    while(connect(clientSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
+    	while(connect(clientSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
 		char buf[11];
 		sprintf(buf, "%d", idx);
 		strcat(serverIP, buf);
 		inet_pton(AF_INET, serverIP, &serverAddr.sin_addr); 
 		idx++;
 		serverIP[10] = '\0';
-    }
+    	}
 
-    unsigned int assignedIP;
-    recv(clientSocket, &assignedIP, sizeof(assignedIP), 0);
-    assignedIP = ntohl(assignedIP);
+    	unsigned int assignedIP;
+    	recv(clientSocket, &assignedIP, sizeof(assignedIP), 0);
+    	assignedIP = ntohl(assignedIP);
 
-    char tunName[] = "tun0";
-    int tunFd = tun_alloc(tunName);
-    if(tunFd < 0) errquit("Tun0 Create Error..");
+    	char tunName[] = "tun0";
+    	int tunFd = tun_alloc(tunName);
+    	if(tunFd < 0) errquit("Tun0 Create Error..");
 
-    ifreq_set_addr(clientSocket, tunName, htonl(assignedIP));
-    ifreq_set_netmask(clientSocket, tunName, htonl(NETMASK));
-    ifreq_set_flag(clientSocket, tunName, IFF_UP);
+    	ifreq_set_addr(clientSocket, tunName, htonl(assignedIP));
+    	ifreq_set_netmask(clientSocket, tunName, htonl(NETMASK));
+    	ifreq_set_flag(clientSocket, tunName, IFF_UP);
 
 	while(1) {
 
