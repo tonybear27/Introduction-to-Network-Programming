@@ -22,4 +22,4 @@
 ## Grading Policy
 Lab:        50 % \
 Homework:   40 % \
-Roll Call:  10 %
+Class Participate:  10 %
